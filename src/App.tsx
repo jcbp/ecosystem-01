@@ -11,14 +11,14 @@ import "./App.css";
 
 function Cell({
   substance,
-  organism,
+  organisms,
 }: {
   substance: Compound;
-  organism?: Organism | null;
+  organisms: Organism[];
 }) {
   const handleClick = () => {
     console.log("Compound", substance);
-    console.log("Organism", organism);
+    console.log("Organism", organisms);
   };
   return (
     <div
@@ -26,17 +26,17 @@ function Cell({
       style={{ backgroundColor: substance.color }}
       onClick={handleClick}
     >
-      {organism && (
+      {organisms.map((organism, index) => (
         <div
           className="organism"
           style={{
             backgroundColor: organism.color,
             position: "absolute",
-            top: '2px',
-            left: '2px',
+            top: `${Math.floor(index / 3) * 10}px`,
+            left: `${(index % 3) * 10}px`,
           }}
         />
-      )}
+      ))}
     </div>
   );
 }
@@ -44,8 +44,8 @@ function Cell({
 function App() {
   createInorganicCompounds(5);
   createOrganicCompounds(5);
-  createWorldOrganisms(5);
-  const world = new World(20, 20, 15);
+  createWorldOrganisms(15);
+  const world = new World(20, 20, 50);
 
   return (
     <div className="world">
@@ -55,7 +55,7 @@ function App() {
             <Cell
               key={`${rowIndex}-${colIndex}`}
               substance={substance}
-              organism={world.getOrganism(rowIndex, colIndex)}
+              organisms={world.getOrganisms(rowIndex, colIndex)}
             />
           ))}
         </div>

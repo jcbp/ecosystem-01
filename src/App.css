@@ -17,18 +17,18 @@
 .world {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
 }
 
 .row {
   display: flex;
   flex-direction: row;
-  gap: 10px;
+  gap: 6px;
 }
 
 .cell {
-  width: 26px;
-  height: 26px;
+  width: 32px;
+  height: 32px;
   border: 1px solid black;
   display: flex;
   justify-content: center;

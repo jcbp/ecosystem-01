@@ -7,7 +7,7 @@ export class World {
   private readonly rows: number;
   private readonly cols: number;
   private readonly compounds: Compound[][];
-  private readonly organisms: (Organism | null)[][];
+  private readonly organisms: Organism[][][];
 
   constructor(rows: number, cols: number, numInitialOrganisms: number) {
     this.rows = rows;
@@ -36,27 +36,24 @@ export class World {
     rows: number,
     cols: number,
     numOrganisms: number
-  ): (Organism | null)[][] {
-    const organisms: (Organism | null)[][] = [];
+  ): Organism[][][] {
+    const organisms: Organism[][][] = [];
 
     // initialize empty grid
     for (let i = 0; i < rows; i++) {
       const row = [];
       for (let j = 0; j < cols; j++) {
-        row.push(null);
+        row.push([]);
       }
       organisms.push(row);
     }
 
     // place organisms randomly
     for (let i = 0; i < numOrganisms; i++) {
+      const x = Math.floor(Math.random() * rows);
+      const y = Math.floor(Math.random() * cols);
       const organism = this.generateRandomOrganism();
-      let x, y;
-      do {
-        x = Math.floor(Math.random() * rows);
-        y = Math.floor(Math.random() * cols);
-      } while (organisms[x][y] !== null);
-      organisms[x][y] = organism;
+      organisms[x][y].push(organism);
     }
 
     return organisms;
@@ -76,27 +73,31 @@ export class World {
     return this.compounds[row][col];
   }
 
-  public getOrganism(row: number, col: number): Organism | null {
+  public getOrganisms(row: number, col: number): Organism[] {
     return this.organisms[row][col];
   }
 
   public addOrganism(organism: Organism, row: number, col: number): void {
-    this.organisms[row][col] = organism;
+    this.organisms[row][col].push(organism);
   }
 
-  public removeOrganism(row: number, col: number): void {
-    this.organisms[row][col] = null;
+  public removeOrganism(row: number, col: number, organism: Organism): void {
+    const organisms = this.organisms[row][col];
+    const index = organisms.findIndex((o) => o === organism);
+    if (index >= 0) {
+      organisms.splice(index, 1);
+    }
   }
 
   public moveOrganism(
     fromRow: number,
     fromCol: number,
     toRow: number,
-    toCol: number
+    toCol: number,
+    organism: Organism
   ): void {
-    const organism = this.organisms[fromRow][fromCol];
-    this.organisms[fromRow][fromCol] = null;
-    this.organisms[toRow][toCol] = organism;
+    this.removeOrganism(fromRow, fromCol, organism);
+    this.organisms[toRow][toCol].push(organism);
   }
 
   public update(): void {
