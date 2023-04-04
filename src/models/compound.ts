@@ -27,14 +27,23 @@ export class CompoundClass implements Compound {
       .padStart(2, "0")}_${c.toString().padStart(2, "0")}`;
     this.organic = organic;
   }
+
+  static copy(compound: CompoundClass): CompoundClass {
+    return new CompoundClass(
+      compound.components.a,
+      compound.components.b,
+      compound.components.c,
+      compound.organic
+    );
+  }
 }
 
-export const generateCompound = (): Compound => {
+export const createCompound = (organic: boolean): Compound => {
   return new CompoundClass(
     Math.floor(Math.random() * 11),
     Math.floor(Math.random() * 11),
     Math.floor(Math.random() * 11),
-    Math.random() < 0.5 // random boolean for organic attribute
+    organic
   );
 };
 
@@ -42,19 +51,28 @@ export const worldCompounds: Compound[] = [];
 export const worldOrganicCompounds: Compound[] = [];
 export const worldInorganicCompounds: Compound[] = [];
 
-export function generateWorldCompounds(numCompounds: number) {
+export function createOrganicCompounds(numCompounds: number) {
   const existingCompounds: string[] = [];
 
-  while (worldCompounds.length < numCompounds) {
-    const newCompound = generateCompound();
+  while (worldOrganicCompounds.length < numCompounds) {
+    const newCompound = createCompound(true);
     if (!existingCompounds.includes(newCompound.name)) {
       existingCompounds.push(newCompound.name);
       worldCompounds.push(newCompound);
-      if (newCompound.organic) {
-        worldOrganicCompounds.push(newCompound);
-      } else {
-        worldInorganicCompounds.push(newCompound);
-      }
+      worldOrganicCompounds.push(newCompound);
+    }
+  }
+}
+
+export function createInorganicCompounds(numCompounds: number) {
+  const existingCompounds: string[] = [];
+
+  while (worldInorganicCompounds.length < numCompounds) {
+    const newCompound = createCompound(false);
+    if (!existingCompounds.includes(newCompound.name)) {
+      existingCompounds.push(newCompound.name);
+      worldCompounds.push(newCompound);
+      worldInorganicCompounds.push(newCompound);
     }
   }
 }

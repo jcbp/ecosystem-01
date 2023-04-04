@@ -1,15 +1,44 @@
-.world {
-  width: 520px; /* ajusta el ancho a tu preferencia */
-  margin: 50px auto; /* centra el contenedor en la página */
+/* .world {
+  width: 520px; 
+  margin: 50px auto; 
 }
 
 .row {
-  margin-bottom: 6px; /* separación entre filas */
+  margin-bottom: 6px; 
 }
 
 .compound {
   width: 10px;
   height: 10px;
   display: inline-block;
-  margin-right: 16px; /* separación entre sustancias */
+  margin-right: 16px; 
+} */
+
+.world {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+}
+
+.cell {
+  width: 26px;
+  height: 26px;
+  border: 1px solid black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+.organism {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid white;
 }

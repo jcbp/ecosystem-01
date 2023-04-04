@@ -16,14 +16,15 @@ export interface Mutation {
   magnitude: number; // Magnitude of mutations
 }
 
-export interface LivingBeing {
+export interface Organism {
   name: string;
+  color: string;
   energy: number;
   senescence: number;
   metabolicRate: number;
   reproduction: Reproduction;
   constituentCompounds: Compound[];
-  needs: NutrientRequirement[];
+  metabolizableCompounds: NutrientRequirement[];
   mutation: Mutation;
   traits: {
     [key: string]: any;
