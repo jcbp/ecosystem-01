@@ -1,4 +1,4 @@
-/* .world {
+/* .ecosystem {
   width: 520px; 
   margin: 50px auto; 
 }
@@ -14,7 +14,7 @@
   margin-right: 16px; 
 } */
 
-.world {
+.ecosystem {
   display: flex;
   flex-direction: column;
   gap: 6px;

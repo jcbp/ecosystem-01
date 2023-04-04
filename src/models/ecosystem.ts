@@ -1,17 +1,24 @@
-import { worldInorganicCompounds, CompoundClass } from "./compound";
-import { worldOrganisms, OrganismClass } from "./organism";
+import { CompoundClass } from "./compound";
+import { Organism } from "./organism";
 import { Compound } from "../types/compound";
-import { Organism } from "../types/organism";
+import { EcosystemBlueprint } from "./ecosystem-blueprint";
 
-export class World {
+export class Ecosystem {
   private readonly rows: number;
   private readonly cols: number;
   private readonly compounds: Compound[][];
   private readonly organisms: Organism[][][];
+  private readonly ecosystemBlueprint: EcosystemBlueprint;
 
-  constructor(rows: number, cols: number, numInitialOrganisms: number) {
+  constructor(
+    ecosystemBlueprint: EcosystemBlueprint,
+    rows: number,
+    cols: number,
+    numInitialOrganisms: number
+  ) {
     this.rows = rows;
     this.cols = cols;
+    this.ecosystemBlueprint = ecosystemBlueprint;
     this.compounds = this.generateCompounds(rows, cols);
     this.organisms = this.generateOrganisms(rows, cols, numInitialOrganisms);
   }
@@ -22,9 +29,11 @@ export class World {
       const row: Compound[] = [];
       for (let j = 0; j < cols; j++) {
         const randomIndex = Math.floor(
-          Math.random() * worldInorganicCompounds.length
+          Math.random() *
+            this.ecosystemBlueprint.inorganicCompoundTypes.length
         );
-        const compound = worldInorganicCompounds[randomIndex];
+        const compound =
+          this.ecosystemBlueprint.inorganicCompoundTypes[randomIndex];
         row.push(CompoundClass.copy(compound));
       }
       compounds.push(row);
@@ -60,9 +69,11 @@ export class World {
   }
 
   private generateRandomOrganism(): Organism {
-    const randomIndex = Math.floor(Math.random() * worldOrganisms.length);
-    const specimen = worldOrganisms[randomIndex];
-    return OrganismClass.copy(specimen);
+    const randomIndex = Math.floor(
+      Math.random() * this.ecosystemBlueprint.organismTypes.length
+    );
+    const specimen = this.ecosystemBlueprint.organismTypes[randomIndex];
+    return Organism.copy(specimen);
   }
 
   public getCompounds(): Compound[][] {
@@ -101,6 +112,17 @@ export class World {
   }
 
   public update(): void {
-    // update the state of the world after each turn
+    for (let i = 0; i < this.rows; i++) {
+      for (let j = 0; j < this.cols; j++) {
+        const cell = this.organisms[i][j];
+
+        // call update for each organism in the cell
+        cell.forEach((organism) => {
+          if (organism) {
+            organism.update();
+          }
+        });
+      }
+    }
   }
 }

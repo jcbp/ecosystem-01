@@ -1,11 +1,8 @@
 import { Compound } from "./types/compound";
-import { Organism } from "./types/organism";
-import {
-  createInorganicCompounds,
-  createOrganicCompounds,
-} from "./models/compound";
-import { World } from "./models/world";
-import { createWorldOrganisms } from "./models/organism";
+import { Ecosystem } from "./models/ecosystem";
+import { Organism } from "./models/organism";
+import { EcosystemBlueprint } from "./models/ecosystem-blueprint";
+import { config } from "./config";
 
 import "./App.css";
 
@@ -29,6 +26,7 @@ function Cell({
       {organisms.map((organism, index) => (
         <div
           className="organism"
+          key={index}
           style={{
             backgroundColor: organism.color,
             position: "absolute",
@@ -42,20 +40,23 @@ function Cell({
 }
 
 function App() {
-  createInorganicCompounds(5);
-  createOrganicCompounds(5);
-  createWorldOrganisms(15);
-  const world = new World(20, 20, 50);
+  const ecosystemBlueprint = new EcosystemBlueprint();
+  const ecosystem = new Ecosystem(
+    ecosystemBlueprint,
+    config.ecosystemRows,
+    config.ecosystemCols,
+    config.numInitialOrganisms
+  );
 
   return (
-    <div className="world">
-      {world.getCompounds().map((row, rowIndex) => (
+    <div className="ecosystem">
+      {ecosystem.getCompounds().map((row, rowIndex) => (
         <div key={rowIndex} className="row">
           {row.map((substance, colIndex) => (
             <Cell
               key={`${rowIndex}-${colIndex}`}
               substance={substance}
-              organisms={world.getOrganisms(rowIndex, colIndex)}
+              organisms={ecosystem.getOrganisms(rowIndex, colIndex)}
             />
           ))}
         </div>
