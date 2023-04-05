@@ -1,7 +1,7 @@
+import { useState, useEffect } from "react";
 import { Compound } from "./types/compound";
 import { Ecosystem } from "./models/ecosystem";
 import { Organism } from "./models/organism";
-import { EcosystemBlueprint } from "./models/ecosystem-blueprint";
 import { config } from "./config";
 
 import "./App.css";
@@ -16,6 +16,9 @@ function Cell({
   const handleClick = () => {
     console.log("Compound", substance);
     console.log("Organism", organisms);
+    if (organisms[0]) {
+      console.log(organisms[0].getContext());
+    }
   };
   return (
     <div
@@ -39,24 +42,33 @@ function Cell({
   );
 }
 
+const ecosystem = new Ecosystem(
+  config.ecosystemRows,
+  config.ecosystemCols,
+  config.numInitialOrganisms
+);
+
 function App() {
-  const ecosystemBlueprint = new EcosystemBlueprint();
-  const ecosystem = new Ecosystem(
-    ecosystemBlueprint,
-    config.ecosystemRows,
-    config.ecosystemCols,
-    config.numInitialOrganisms
-  );
+  const [compounds, setCompounds] = useState<Compound[][]>([]);
+  const [organisms, setOrganisms] = useState<Organism[][][]>([]);
+
+  useEffect(() => {
+    setInterval(() => {
+      ecosystem.update();
+      setCompounds([...ecosystem.getCompounds()]);
+      setOrganisms([...ecosystem.getOrganisms()]);
+    }, 200);
+  }, []);
 
   return (
     <div className="ecosystem">
-      {ecosystem.getCompounds().map((row, rowIndex) => (
+      {compounds.map((row, rowIndex) => (
         <div key={rowIndex} className="row">
           {row.map((substance, colIndex) => (
             <Cell
               key={`${rowIndex}-${colIndex}`}
               substance={substance}
-              organisms={ecosystem.getOrganisms(rowIndex, colIndex)}
+              organisms={organisms[rowIndex][colIndex]}
             />
           ))}
         </div>

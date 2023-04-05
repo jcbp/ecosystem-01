@@ -2,10 +2,11 @@ import { Compound } from "../types/compound";
 import { NutrientRequirement, Mutation, Reproduction } from "../types/organism";
 import { calculateAverageColor } from "../utils/colors";
 import { Organism } from "./organism";
+import { getRandomInt } from "../utils/random";
 
 const randomReproduction = (): Reproduction => ({
   mode: Math.random() < 0.5 ? "asexual" : "sexual",
-  offspring: Math.floor(Math.random() * 10) + 1,
+  offspring: getRandomInt(1, 10),
   probability: Math.random(),
 });
 
@@ -15,20 +16,38 @@ const randomMutation = (): Mutation => ({
 });
 
 const randomMetabolizableCompounds = (
-  ecosystemCompounds: Compound[],
+  compoundTypes: Compound[],
   numMetabolizableCompounds: number
 ): NutrientRequirement[] => {
   const metabolizableCompounds: NutrientRequirement[] = [];
 
   while (metabolizableCompounds.length < numMetabolizableCompounds) {
-    const compound =
-      ecosystemCompounds[Math.floor(Math.random() * ecosystemCompounds.length)];
-    const quantity = Math.floor(Math.random() * 10) + 1;
+    const compoundIndex = getRandomInt(0, compoundTypes.length - 1);
+    const compound = compoundTypes[compoundIndex];
+    const quantity = getRandomInt(1, 10);
+
     const nutrientRequirement: NutrientRequirement = { compound, quantity };
     metabolizableCompounds.push(nutrientRequirement);
   }
 
   return metabolizableCompounds;
+};
+
+const randomToxicCompounds = (
+  compoundTypes: Compound[],
+  numToxicCompounds: number
+): Compound[] => {
+  const toxicCompounds: Compound[] = [];
+
+  while (toxicCompounds.length < numToxicCompounds) {
+    const compound =
+      compoundTypes[Math.floor(Math.random() * compoundTypes.length)];
+    if (!toxicCompounds.includes(compound)) {
+      toxicCompounds.push(compound);
+    }
+  }
+
+  return toxicCompounds;
 };
 
 export const createOrganismType = (
@@ -49,14 +68,18 @@ export const createOrganismType = (
     }
   }
 
-  const numMetabolizableCompounds = Math.floor(Math.random() * 4) + 1;
+  const numMetabolizableCompounds = getRandomInt(0, 5);
   const metabolizableCompounds = randomMetabolizableCompounds(
     compoundTypes,
     numMetabolizableCompounds
   );
   const reproduction = randomReproduction();
   const mutation = randomMutation();
-  const metabolicRate = Math.random() * 10;
+  const metabolicRate = Math.random() * 2;
+  const toxicCompounds = randomToxicCompounds(
+    compoundTypes,
+    getRandomInt(0, 2)
+  );
   const name = constituentCompounds.map((c) => c.name).join("#");
   const constituentColors = constituentCompounds.map((c) => c.color);
   const color = calculateAverageColor(constituentColors);
@@ -64,6 +87,7 @@ export const createOrganismType = (
   return new Organism(
     constituentCompounds,
     metabolizableCompounds,
+    toxicCompounds,
     reproduction,
     mutation,
     metabolicRate,

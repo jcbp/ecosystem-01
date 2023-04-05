@@ -7,4 +7,7 @@ export interface Compound {
     b: number;
     c: number;
   };
+  remaining: number;
+
+  isExhausted(): boolean;
 }

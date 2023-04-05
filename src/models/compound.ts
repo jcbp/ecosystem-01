@@ -1,11 +1,5 @@
 import { Compound } from "../types/compound";
-
-const calculateColorValue = (component: number): string => {
-  const range = 255 / 10; // 10 is the max component value
-  const value = Math.floor(component * range);
-  const hex = value.toString(16).padStart(2, "0");
-  return hex;
-};
+import { calculateColorValue } from "../utils/colors";
 
 export class CompoundClass implements Compound {
   public color: string;
@@ -16,6 +10,11 @@ export class CompoundClass implements Compound {
     c: number;
   };
   public organic: boolean;
+  public remaining: number = 100;
+
+  public isExhausted(): boolean {
+    return this.remaining <= 0;
+  }
 
   constructor(a: number, b: number, c: number, organic: boolean) {
     this.components = { a, b, c };

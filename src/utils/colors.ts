@@ -26,3 +26,10 @@ export const calculateAverageColor = (colors: string[]): string => {
     .toString(16)
     .padStart(2, "0")}${avgColor.b.toString(16).padStart(2, "0")}`;
 };
+
+export const calculateColorValue = (component: number): string => {
+  const range = 255 / 10; // 10 is the max component value
+  const value = Math.floor(component * range);
+  const hex = value.toString(16).padStart(2, "0");
+  return hex;
+};

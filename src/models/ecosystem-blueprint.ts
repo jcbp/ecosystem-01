@@ -3,6 +3,7 @@ import { CompoundClass } from "./compound";
 import { Organism } from "./organism";
 import { createOrganismType } from "./organism-type";
 import { config } from "../config";
+import { Ecosystem } from "./ecosystem";
 
 export class EcosystemBlueprint {
   public compoundTypes: Compound[] = [];
@@ -64,5 +65,14 @@ export class EcosystemBlueprint {
         this.organismTypes.push(newOrganism);
       }
     }
+  }
+
+  private static instance: EcosystemBlueprint;
+
+  public static getInstance(): EcosystemBlueprint {
+    if (!EcosystemBlueprint.instance) {
+      EcosystemBlueprint.instance = new EcosystemBlueprint();
+    }
+    return EcosystemBlueprint.instance;
   }
 }
