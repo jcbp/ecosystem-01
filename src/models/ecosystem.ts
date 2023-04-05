@@ -200,6 +200,10 @@ export class Ecosystem {
     this.organisms[destinationRow][destinationCol].push(organism);
   }
 
+  public getSize(): [number, number] {
+    return [this.rows, this.cols];
+  }
+
   public update(): void {
     // Update compounds
     for (let i = 0; i < this.rows; i++) {

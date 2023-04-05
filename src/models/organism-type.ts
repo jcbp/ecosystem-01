@@ -2,7 +2,7 @@ import { Compound } from "../types/compound";
 import { NutrientRequirement, Mutation, Reproduction } from "../types/organism";
 import { calculateAverageColor } from "../utils/colors";
 import { Organism } from "./organism";
-import { getRandomInt } from "../utils/random";
+import { getRandomInt, generateRandomString } from "../utils/random";
 
 const randomReproduction = (): Reproduction => ({
   mode: Math.random() < 0.5 ? "asexual" : "sexual",
@@ -76,22 +76,25 @@ export const createOrganismType = (
   const reproduction = randomReproduction();
   const mutation = randomMutation();
   const metabolicRate = Math.random() * 2;
+  const contextSensitivity = getRandomInt(0, 4);
   const toxicCompounds = randomToxicCompounds(
     compoundTypes,
     getRandomInt(0, 2)
   );
+  // up, right, down, left
+  const movementPattern = generateRandomString(16, "URDL");
   const name = constituentCompounds.map((c) => c.name).join("#");
   const constituentColors = constituentCompounds.map((c) => c.color);
   const color = calculateAverageColor(constituentColors);
 
-  return new Organism(
+  return new Organism(name, color, {
     constituentCompounds,
     metabolizableCompounds,
     toxicCompounds,
     reproduction,
     mutation,
     metabolicRate,
-    name,
-    color
-  );
+    contextSensitivity,
+    movementPattern,
+  });
 };

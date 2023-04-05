@@ -13,19 +13,14 @@ export const reproduceOrganism = (
   const ecosystemBlueprint = EcosystemBlueprint.getInstance();
   const offspring: Organism[] = [];
 
-  for (let i = 0; i < organism.reproduction.offspring; i++) {
+  for (let i = 0; i < organism.traits.reproduction.offspring; i++) {
     // Asexual reproduction
-    if (organism.reproduction.mode === "asexual") {
+    if (organism.traits.reproduction.mode === "asexual") {
       const newOrganism = new Organism(
-        organism.constituentCompounds,
-        organism.metabolizableCompounds,
-        organism.toxicCompounds,
-        organism.reproduction,
-        organism.mutation,
-        organism.metabolicRate,
         organism.name,
         organism.color,
-        ecosystem
+        organism.traits,
+        organism.ecosystem
       );
       offspring.push(newOrganism);
     }
@@ -33,9 +28,9 @@ export const reproduceOrganism = (
     else if (partner) {
       const newCompounds: Compound[] = [];
 
-      for (let i = 0; i < organism.constituentCompounds.length; i++) {
-        const compoundA = organism.constituentCompounds[i];
-        const compoundB = partner.constituentCompounds[i];
+      for (let i = 0; i < organism.traits.constituentCompounds.length; i++) {
+        const compoundA = organism.traits.constituentCompounds[i];
+        const compoundB = partner.traits.constituentCompounds[i];
         const compoundC =
           ecosystemBlueprint.organicCompoundTypes[
             Math.floor(
@@ -52,15 +47,10 @@ export const reproduceOrganism = (
       }
 
       const newOrganism = new Organism(
-        newCompounds,
-        organism.metabolizableCompounds,
-        organism.toxicCompounds,
-        organism.reproduction,
-        organism.mutation,
-        (organism.metabolicRate + partner.metabolicRate) / 2,
         `${organism.name} x ${partner.name}`,
         calculateAverageColor([organism.color, partner.color]),
-        ecosystem
+        organism.traits,
+        organism.ecosystem
       );
 
       offspring.push(newOrganism);

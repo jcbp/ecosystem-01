@@ -3,7 +3,6 @@ import { CompoundClass } from "./compound";
 import { Organism } from "./organism";
 import { createOrganismType } from "./organism-type";
 import { config } from "../config";
-import { Ecosystem } from "./ecosystem";
 
 export class EcosystemBlueprint {
   public compoundTypes: Compound[] = [];

@@ -8,51 +8,48 @@ interface Context {
   nearbyOrganisms: Organism[];
 }
 
+interface OrganismTraits {
+  constituentCompounds: Compound[];
+  metabolizableCompounds: NutrientRequirement[];
+  toxicCompounds: Compound[];
+  reproduction: Reproduction;
+  mutation: Mutation;
+  metabolicRate: number;
+  contextSensitivity: number;
+  movementPattern: string;
+}
+
 export class Organism {
   public name: string;
   public color: string;
   public energy: number = 100;
   public senescence: number = 0;
   public isAlive: boolean = true;
-  public contextSensitivity: number = 2;
-  public metabolicRate: number;
-  public reproduction: Reproduction;
-  public constituentCompounds: Compound[];
-  public metabolizableCompounds: NutrientRequirement[];
-  public toxicCompounds: Compound[];
-  public mutation: Mutation;
   public ecosystem: Ecosystem | undefined;
+  public traits: OrganismTraits;
+
+  private movementPatternIndex: number = 0;
 
   constructor(
-    constituentCompounds: Compound[],
-    metabolizableCompounds: NutrientRequirement[],
-    toxicCompounds: Compound[],
-    reproduction: Reproduction,
-    mutation: Mutation,
-    metabolicRate: number,
     name: string,
     color: string,
+    traits: OrganismTraits,
     ecosystem?: Ecosystem
   ) {
-    this.constituentCompounds = constituentCompounds;
-    this.metabolizableCompounds = metabolizableCompounds;
-    this.toxicCompounds = toxicCompounds;
-    this.reproduction = reproduction;
-    this.mutation = mutation;
-    this.metabolicRate = metabolicRate;
     this.name = name;
     this.color = color;
+    this.traits = traits;
     this.ecosystem = ecosystem;
   }
 
   private move(x: number, y: number) {
     this.ecosystem!.moveOrganism(this, x, y);
-    this.energy -= this.metabolicRate * 2;
+    this.energy -= this.traits.metabolicRate * 4;
   }
 
   private findNutrients(): [number, number] | null {
     const context = this.getContext();
-    for (const nutrient of this.metabolizableCompounds) {
+    for (const nutrient of this.traits.metabolizableCompounds) {
       for (const compound of context.nearbyCompounds) {
         if (compound.name === nutrient.compound.name) {
           const [row, col] = this.ecosystem!.findCompoundLocation(compound);
@@ -62,7 +59,7 @@ export class Organism {
       for (const organism of context.nearbyOrganisms) {
         if (
           organism !== this &&
-          organism.constituentCompounds.some(
+          organism.traits.constituentCompounds.some(
             (compound) => compound.name === nutrient.compound.name
           )
         ) {
@@ -78,7 +75,7 @@ export class Organism {
     const currentCompound = this.ecosystem!.getCompoundAtSamePosition(this);
     if (
       currentCompound &&
-      this.metabolizableCompounds.some(
+      this.traits.metabolizableCompounds.some(
         (r) => r.compound.name === currentCompound.name
       )
     ) {
@@ -90,8 +87,8 @@ export class Organism {
       this.ecosystem!.getOrganismsAtSamePosition(this);
     for (const organism of organismsAtSamePosition) {
       if (
-        this.metabolizableCompounds.some((r) =>
-          organism.constituentCompounds.includes(r.compound)
+        this.traits.metabolizableCompounds.some((r) =>
+          organism.traits.constituentCompounds.includes(r.compound)
         )
       ) {
         return organism;
@@ -104,11 +101,11 @@ export class Organism {
 
   private consumeNutrient(nutrientSource: Organism | CompoundClass) {
     if (nutrientSource instanceof Organism) {
-      for (const requirement of this.metabolizableCompounds) {
+      for (const requirement of this.traits.metabolizableCompounds) {
         const compound = requirement.compound;
         const quantity = requirement.quantity;
         if (
-          nutrientSource.constituentCompounds.find(
+          nutrientSource.traits.constituentCompounds.find(
             (c) => c.name === compound.name
           )
         ) {
@@ -118,7 +115,7 @@ export class Organism {
       nutrientSource.energy -= 30;
     } else if (nutrientSource instanceof CompoundClass) {
       if (!nutrientSource.isExhausted()) {
-        const requirement = this.metabolizableCompounds.find(
+        const requirement = this.traits.metabolizableCompounds.find(
           (r) => r.compound.name === nutrientSource.name
         );
         if (requirement) {
@@ -130,7 +127,7 @@ export class Organism {
   }
 
   public update(): void {
-    this.energy -= this.metabolicRate / 2;
+    this.energy -= this.traits.metabolicRate;
     this.senescence++;
 
     if (this.energy < 80) {
@@ -144,13 +141,34 @@ export class Organism {
         if (nutrientsCoords) {
           this.move(nutrientsCoords[0], nutrientsCoords[1]);
         } else {
-          // Move to a random location
-          const ecosystemCompounds = this.ecosystem!.getCompounds();
-          const rows = ecosystemCompounds.length;
-          const cols = ecosystemCompounds[0].length;
-          const randomRow = Math.floor(Math.random() * rows);
-          const randomCol = Math.floor(Math.random() * cols);
-          this.move(randomRow, randomCol);
+          // Follow movement pattern if no nutrients are found
+          if (this.movementPatternIndex >= this.traits.movementPattern.length) {
+            this.movementPatternIndex = 0;
+          }
+          const nextMove =
+            this.traits.movementPattern[this.movementPatternIndex];
+          const [x, y] = this.ecosystem!.findOrganismLocation(this);
+          let newX = x;
+          let newY = y;
+          switch (nextMove) {
+            case "U":
+              newY -= 1;
+              break;
+            case "R":
+              newX += 1;
+              break;
+            case "D":
+              newY += 1;
+              break;
+            case "L":
+              newX -= 1;
+              break;
+          }
+          const [ecosystemRows, ecosystemCols] = this.ecosystem!.getSize();
+          newX = (newX + ecosystemCols) % ecosystemCols;
+          newY = (newY + ecosystemRows) % ecosystemRows;
+          this.move(newX, newY);
+          this.movementPatternIndex++;
         }
       }
     }
@@ -166,25 +184,20 @@ export class Organism {
     }
     const nearbyOrganisms = this.ecosystem.getNearbyOrganisms(
       this,
-      this.contextSensitivity
+      this.traits.contextSensitivity || 1
     );
     const nearbyCompounds = this.ecosystem.getNearbyCompounds(
       this,
-      this.contextSensitivity
+      this.traits.contextSensitivity || 1
     );
     return { nearbyCompounds, nearbyOrganisms };
   }
 
   static copy(organism: Organism, ecosystem: Ecosystem): Organism {
     return new Organism(
-      organism.constituentCompounds,
-      organism.metabolizableCompounds,
-      organism.toxicCompounds,
-      organism.reproduction,
-      organism.mutation,
-      organism.metabolicRate,
       organism.name,
       organism.color,
+      organism.traits,
       ecosystem
     );
   }

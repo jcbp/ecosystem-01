@@ -3,3 +3,16 @@ export const getRandomInt = (min: number, max: number) => {
   max = Math.floor(max);
   return Math.floor(Math.random() * (max - min + 1)) + min;
 };
+
+export const generateRandomString = (
+  length: number,
+  possibleChars: string
+): string => {
+  let result = "";
+  for (let i = 0; i < length; i++) {
+    result += possibleChars.charAt(
+      Math.floor(Math.random() * possibleChars.length)
+    );
+  }
+  return result;
+};
