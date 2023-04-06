@@ -57,7 +57,10 @@ export class Organism {
     const context = this.getContext();
     for (const nutrient of this.traits.metabolizableCompounds) {
       for (const compound of context.nearbyCompounds) {
-        if (compound.name === nutrient.compound.name) {
+        if (
+          compound.name === nutrient.compound.name &&
+          !compound.isExhausted()
+        ) {
           const [row, col] = this.ecosystem!.findCompoundLocation(compound);
           return [row, col];
         }
@@ -201,34 +204,39 @@ export class Organism {
       this.age >= this.traits.reproductivePeriod[0] &&
       this.age <= this.traits.reproductivePeriod[1]
     ) {
-      this.reproductiveUrge += 0.2;
+      this.reproductiveUrge += 1;
       reproductiveUrgency =
         this.reproductiveUrge / this.traits.reproductiveUrgeThreshold;
+    } else {
+      this.reproductiveUrge = 0;
     }
 
-    if (nutrientUrgency > reproductiveUrgency) {
-      this.status = "nutrient interest";
-      // Priorizar búsqueda de nutrientes
-      if (this.energy < this.traits.nutrientUrgeThreshold) {
-        this.status = "nutrient needed";
-        const nutrients = this.findNutrientsAtCurrentPosition();
-        if (nutrients) {
-          this.status = "nutrient needed. found in current position";
-          this.consumeNutrient(nutrients);
+    if (
+      nutrientUrgency > reproductiveUrgency &&
+      this.energy < this.traits.nutrientUrgeThreshold
+    ) {
+      this.status = "nutrient needed";
+      const nutrients = this.findNutrientsAtCurrentPosition();
+      if (nutrients) {
+        this.status = "nutrient needed. found in current position";
+        this.consumeNutrient(nutrients);
+      } else {
+        this.status = "nutrient needed. not found in current position";
+        const nutrientsCoords = this.findNutrientsAround();
+        if (nutrientsCoords) {
+          this.status = "moving to near nutrients";
+          this.moveTo(nutrientsCoords[0], nutrientsCoords[1]);
         } else {
-          this.status = "nutrient needed. not found in current position";
-          const nutrientsCoords = this.findNutrientsAround();
-          if (nutrientsCoords) {
-            this.status = "moving to near nutrients";
-            this.moveTo(nutrientsCoords[0], nutrientsCoords[1]);
-          } else {
-            this.status = "moving to find nutrients";
-            this.moveByPattern();
-          }
+          this.status = "moving to find nutrients";
+          this.moveByPattern();
         }
       }
+    } else if (
+      (nutrientUrgency < reproductiveUrgency ||
+        this.energy >= this.traits.nutrientUrgeThreshold) &&
+      this.reproductiveUrge >= this.traits.reproductiveUrgeThreshold
+    ) {
       // Priorizar reproducción
-    } else if (this.reproductiveUrge >= this.traits.reproductiveUrgeThreshold) {
       this.status = "reproduction needed";
       if (this.traits.reproduction.mode === "asexual") {
         asexualReproduce(this);
@@ -244,6 +252,9 @@ export class Organism {
           this.moveByPattern();
         }
       }
+    } else {
+      // Idle
+      this.status = "idle";
     }
   }
 

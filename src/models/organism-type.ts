@@ -5,7 +5,8 @@ import { Organism } from "./organism";
 import { getRandomInt, generateRandomString } from "../utils/random";
 
 const randomReproduction = (): Reproduction => ({
-  mode: Math.random() < 0.5 ? "asexual" : "sexual",
+  // mode: Math.random() < 0.5 ? "asexual" : "sexual",
+  mode: "sexual",
   offspring: getRandomInt(1, 10),
   probability: Math.random(),
 });
@@ -51,12 +52,9 @@ const randomToxicCompounds = (
 };
 
 const getRandomReproductivePeriod = (): [number, number] => {
-  const reproductivePeriod = getRandomInt(0, 100);
-  const reproductiveStartAge = getRandomInt(
-    Math.floor(reproductivePeriod / 10),
-    100 - reproductivePeriod
-  );
-  const reproductiveEndAge = reproductiveStartAge + reproductivePeriod;
+  const reproductivePeriod = getRandomInt(0, 100); // Duración aleatoria del periodo reproductivo
+  const reproductiveStartAge = getRandomInt(0, 100 - reproductivePeriod); // Inicio del periodo reproductivo
+  const reproductiveEndAge = reproductiveStartAge + reproductivePeriod; // Fin del periodo reproductivo
   return [reproductiveStartAge, reproductiveEndAge];
 };
 
