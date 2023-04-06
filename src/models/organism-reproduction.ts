@@ -5,6 +5,28 @@ import { calculateAverageColor } from "../utils/colors";
 import { EcosystemBlueprint } from "./ecosystem-blueprint";
 import { Ecosystem } from "./ecosystem";
 
+export const sexualReproduce = (
+  organism1: Organism,
+  organism2: Organism
+): void => {};
+
+export const asexualReproduce = (organism: Organism): void => {
+  const position = organism.ecosystem?.findOrganismLocation(organism);
+  if (position) {
+    for (let i = 0; i < organism.traits.reproduction.offspring; i++) {
+      if (organism.traits.reproduction.probability > Math.random()) {
+        const newOrganism = new Organism(
+          organism.species,
+          organism.color,
+          organism.traits,
+          organism.ecosystem
+        );
+        organism.ecosystem!.addOrganism(newOrganism, position[0], position[1]);
+      }
+    }
+  }
+};
+
 export const reproduceOrganism = (
   organism: Organism,
   partner: Organism | null,
@@ -17,7 +39,7 @@ export const reproduceOrganism = (
     // Asexual reproduction
     if (organism.traits.reproduction.mode === "asexual") {
       const newOrganism = new Organism(
-        organism.name,
+        organism.species,
         organism.color,
         organism.traits,
         organism.ecosystem
@@ -47,7 +69,7 @@ export const reproduceOrganism = (
       }
 
       const newOrganism = new Organism(
-        `${organism.name} x ${partner.name}`,
+        `${organism.species} x ${partner.species}`,
         calculateAverageColor([organism.color, partner.color]),
         organism.traits,
         organism.ecosystem

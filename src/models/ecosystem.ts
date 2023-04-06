@@ -231,9 +231,10 @@ export class Ecosystem {
   private updateOrganisms(row: number, col: number): void {
     const organismsInCell = this.organisms[row][col];
     organismsInCell.forEach((organism) => {
-      organism.update();
       if (!organism.isAlive) {
         this.removeOrganism(organism, row, col);
+      } else {
+        organism.update();
       }
     });
   }

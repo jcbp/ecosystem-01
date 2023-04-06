@@ -50,6 +50,16 @@ const randomToxicCompounds = (
   return toxicCompounds;
 };
 
+const getRandomReproductivePeriod = (): [number, number] => {
+  const reproductivePeriod = getRandomInt(0, 100);
+  const reproductiveStartAge = getRandomInt(
+    Math.floor(reproductivePeriod / 10),
+    100 - reproductivePeriod
+  );
+  const reproductiveEndAge = reproductiveStartAge + reproductivePeriod;
+  return [reproductiveStartAge, reproductiveEndAge];
+};
+
 export const createOrganismType = (
   compoundTypes: Compound[],
   organicCompoundTypes: Compound[]
@@ -83,11 +93,14 @@ export const createOrganismType = (
   );
   // up, right, down, left
   const movementPattern = generateRandomString(16, "URDL");
-  const name = constituentCompounds.map((c) => c.name).join("#");
+  const nutrientUrgeThreshold = getRandomInt(0, 100);
+  const reproductiveUrgeThreshold = getRandomInt(0, 100);
+  const reproductivePeriod = getRandomReproductivePeriod();
+  const species = constituentCompounds.map((c) => c.name).join("#");
   const constituentColors = constituentCompounds.map((c) => c.color);
   const color = calculateAverageColor(constituentColors);
 
-  return new Organism(name, color, {
+  return new Organism(species, color, {
     constituentCompounds,
     metabolizableCompounds,
     toxicCompounds,
@@ -96,5 +109,8 @@ export const createOrganismType = (
     metabolicRate,
     contextSensitivity,
     movementPattern,
+    nutrientUrgeThreshold,
+    reproductiveUrgeThreshold,
+    reproductivePeriod,
   });
 };

@@ -2,6 +2,7 @@ import { Compound } from "../types/compound";
 import { NutrientRequirement, Mutation, Reproduction } from "../types/organism";
 import { CompoundClass } from "./compound";
 import { Ecosystem } from "./ecosystem";
+import { sexualReproduce, asexualReproduce } from "./organism-reproduction";
 
 interface Context {
   nearbyCompounds: Compound[];
@@ -17,37 +18,42 @@ interface OrganismTraits {
   metabolicRate: number;
   contextSensitivity: number;
   movementPattern: string;
+  nutrientUrgeThreshold: number;
+  reproductiveUrgeThreshold: number;
+  reproductivePeriod: [number, number];
 }
 
 export class Organism {
-  public name: string;
+  public species: string;
   public color: string;
   public energy: number = 100;
-  public senescence: number = 0;
+  public age: number = 0;
   public isAlive: boolean = true;
   public ecosystem: Ecosystem | undefined;
   public traits: OrganismTraits;
 
   private movementPatternIndex: number = 0;
+  private reproductiveUrge: number = 0;
+  private status: string = "initial";
 
   constructor(
-    name: string,
+    species: string,
     color: string,
     traits: OrganismTraits,
     ecosystem?: Ecosystem
   ) {
-    this.name = name;
+    this.species = species;
     this.color = color;
     this.traits = traits;
     this.ecosystem = ecosystem;
   }
 
-  private move(x: number, y: number) {
+  private moveTo(x: number, y: number) {
     this.ecosystem!.moveOrganism(this, x, y);
     this.energy -= this.traits.metabolicRate * 4;
   }
 
-  private findNutrients(): [number, number] | null {
+  private findNutrientsAround(): [number, number] | null {
     const context = this.getContext();
     for (const nutrient of this.traits.metabolizableCompounds) {
       for (const compound of context.nearbyCompounds) {
@@ -71,12 +77,14 @@ export class Organism {
     return null;
   }
 
-  public searchNutrientsAtCurrentPosition(): Organism | Compound | null {
+  public findNutrientsAtCurrentPosition(): Organism | Compound | null {
     const currentCompound = this.ecosystem!.getCompoundAtSamePosition(this);
     if (
       currentCompound &&
       this.traits.metabolizableCompounds.some(
-        (r) => r.compound.name === currentCompound.name
+        (r) =>
+          r.compound.name === currentCompound.name &&
+          !currentCompound.isExhausted()
       )
     ) {
       return currentCompound;
@@ -99,6 +107,36 @@ export class Organism {
     return null;
   }
 
+  private moveByPattern() {
+    // Follow movement pattern if no nutrients are found
+    if (this.movementPatternIndex >= this.traits.movementPattern.length) {
+      this.movementPatternIndex = 0;
+    }
+    const nextMove = this.traits.movementPattern[this.movementPatternIndex];
+    const [x, y] = this.ecosystem!.findOrganismLocation(this);
+    let newX = x;
+    let newY = y;
+    switch (nextMove) {
+      case "U":
+        newY -= 1;
+        break;
+      case "R":
+        newX += 1;
+        break;
+      case "D":
+        newY += 1;
+        break;
+      case "L":
+        newX -= 1;
+        break;
+    }
+    const [ecosystemRows, ecosystemCols] = this.ecosystem!.getSize();
+    newX = (newX + ecosystemCols) % ecosystemCols;
+    newY = (newY + ecosystemRows) % ecosystemRows;
+    this.moveTo(newX, newY);
+    this.movementPatternIndex++;
+  }
+
   private consumeNutrient(nutrientSource: Organism | CompoundClass) {
     if (nutrientSource instanceof Organism) {
       for (const requirement of this.traits.metabolizableCompounds) {
@@ -110,6 +148,7 @@ export class Organism {
           )
         ) {
           this.energy += quantity;
+          this.status = "energy incresed";
         }
       }
       nutrientSource.energy -= 30;
@@ -120,61 +159,91 @@ export class Organism {
         );
         if (requirement) {
           this.energy += requirement.quantity;
+          this.status = "energy incresed";
         }
-        nutrientSource.remaining -= 30;
+        nutrientSource.remaining -= 10;
       }
     }
   }
 
-  public update(): void {
-    this.energy -= this.traits.metabolicRate;
-    this.senescence++;
-
-    if (this.energy < 80) {
-      const nutrients = this.searchNutrientsAtCurrentPosition();
-      if (nutrients) {
-        this.consumeNutrient(nutrients);
-      }
-      // If energy is less than 50, search for nutrients
-      else if (this.energy < 50) {
-        const nutrientsCoords = this.findNutrients();
-        if (nutrientsCoords) {
-          this.move(nutrientsCoords[0], nutrientsCoords[1]);
-        } else {
-          // Follow movement pattern if no nutrients are found
-          if (this.movementPatternIndex >= this.traits.movementPattern.length) {
-            this.movementPatternIndex = 0;
-          }
-          const nextMove =
-            this.traits.movementPattern[this.movementPatternIndex];
-          const [x, y] = this.ecosystem!.findOrganismLocation(this);
-          let newX = x;
-          let newY = y;
-          switch (nextMove) {
-            case "U":
-              newY -= 1;
-              break;
-            case "R":
-              newX += 1;
-              break;
-            case "D":
-              newY += 1;
-              break;
-            case "L":
-              newX -= 1;
-              break;
-          }
-          const [ecosystemRows, ecosystemCols] = this.ecosystem!.getSize();
-          newX = (newX + ecosystemCols) % ecosystemCols;
-          newY = (newY + ecosystemRows) % ecosystemRows;
-          this.move(newX, newY);
-          this.movementPatternIndex++;
-        }
-      }
+  public findPartner(): Organism | null {
+    const context = this.getContext();
+    const potentialPartners = context.nearbyOrganisms.filter((organism) =>
+      this.canReproduce(organism)
+    );
+    if (potentialPartners.length > 0) {
+      const partnerIndex = Math.floor(Math.random() * potentialPartners.length);
+      return potentialPartners[partnerIndex];
+    } else {
+      return null;
     }
+  }
 
+  public canReproduce(organism: Organism): boolean {
+    return organism !== this && organism.species === this.species;
+  }
+
+  public update(): void {
     if (this.energy <= 0) {
       this.isAlive = false;
+      return;
+    }
+
+    this.energy -= this.traits.metabolicRate;
+    this.age += 0.1;
+
+    const nutrientUrge = Math.min(100 - this.energy, 100);
+    const nutrientUrgency = nutrientUrge / this.traits.nutrientUrgeThreshold;
+
+    // Verificar si está dentro del periodo reproductivo
+    let reproductiveUrgency = 0;
+    if (
+      this.age >= this.traits.reproductivePeriod[0] &&
+      this.age <= this.traits.reproductivePeriod[1]
+    ) {
+      this.reproductiveUrge += 0.2;
+      reproductiveUrgency =
+        this.reproductiveUrge / this.traits.reproductiveUrgeThreshold;
+    }
+
+    if (nutrientUrgency > reproductiveUrgency) {
+      this.status = "nutrient interest";
+      // Priorizar búsqueda de nutrientes
+      if (this.energy < this.traits.nutrientUrgeThreshold) {
+        this.status = "nutrient needed";
+        const nutrients = this.findNutrientsAtCurrentPosition();
+        if (nutrients) {
+          this.status = "nutrient needed. found in current position";
+          this.consumeNutrient(nutrients);
+        } else {
+          this.status = "nutrient needed. not found in current position";
+          const nutrientsCoords = this.findNutrientsAround();
+          if (nutrientsCoords) {
+            this.status = "moving to near nutrients";
+            this.moveTo(nutrientsCoords[0], nutrientsCoords[1]);
+          } else {
+            this.status = "moving to find nutrients";
+            this.moveByPattern();
+          }
+        }
+      }
+      // Priorizar reproducción
+    } else if (this.reproductiveUrge >= this.traits.reproductiveUrgeThreshold) {
+      this.status = "reproduction needed";
+      if (this.traits.reproduction.mode === "asexual") {
+        asexualReproduce(this);
+        this.reproductiveUrge = 0;
+        this.energy -= 10;
+      } else {
+        const partner = this.findPartner();
+        if (partner) {
+          this.status = "found partner for reproduction";
+          sexualReproduce(this, partner);
+        } else {
+          this.status = "moving to find a partner";
+          this.moveByPattern();
+        }
+      }
     }
   }
 
@@ -195,7 +264,7 @@ export class Organism {
 
   static copy(organism: Organism, ecosystem: Ecosystem): Organism {
     return new Organism(
-      organism.name,
+      organism.species,
       organism.color,
       organism.traits,
       ecosystem

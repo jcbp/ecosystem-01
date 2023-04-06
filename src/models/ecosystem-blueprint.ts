@@ -59,8 +59,8 @@ export class EcosystemBlueprint {
         this.compoundTypes,
         this.organicCompoundTypes
       );
-      if (!existingOrganisms.includes(newOrganism.name)) {
-        existingOrganisms.push(newOrganism.name);
+      if (!existingOrganisms.includes(newOrganism.species)) {
+        existingOrganisms.push(newOrganism.species);
         this.organismTypes.push(newOrganism);
       }
     }

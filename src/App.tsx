@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Compound } from "./types/compound";
 import { Ecosystem } from "./models/ecosystem";
 import { Organism } from "./models/organism";
@@ -23,7 +23,9 @@ function Cell({
   return (
     <div
       className="cell"
-      style={{ backgroundColor: substance.color }}
+      style={{
+        backgroundColor: substance.isExhausted() ? "#c0c0c0" : substance.color,
+      }}
       onClick={handleClick}
     >
       {organisms.map((organism, index) => (
@@ -48,20 +50,44 @@ const ecosystem = new Ecosystem(
   config.numInitialOrganisms
 );
 
+// setInterval(() => {
+//   const matrix = ecosystem.getOrganisms();
+//   const organisms: Organism[] = [];
+//   matrix.forEach((row) => {
+//     row.forEach((cell) => {
+//       cell.forEach((organism) => {
+//         organisms.push(organism);
+//       });
+//     });
+//   });
+//   console.log(organisms);
+// }, 5000);
+
 function App() {
   const [compounds, setCompounds] = useState<Compound[][]>([]);
   const [organisms, setOrganisms] = useState<Organism[][][]>([]);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
 
   useEffect(() => {
-    setInterval(() => {
-      ecosystem.update();
-      setCompounds([...ecosystem.getCompounds()]);
-      setOrganisms([...ecosystem.getOrganisms()]);
-    }, 200);
-  }, []);
+    const interval = setInterval(() => {
+      if (!isPaused) {
+        ecosystem.update();
+        setCompounds([...ecosystem.getCompounds()]);
+        setOrganisms([...ecosystem.getOrganisms()]);
+      }
+    }, 100);
+    return () => clearInterval(interval);
+  }, [isPaused]);
+
+  const handlePauseButtonClick = () => {
+    setIsPaused(!isPaused);
+  };
 
   return (
     <div className="ecosystem">
+      <button onClick={handlePauseButtonClick}>
+        {isPaused ? "Play" : "Pause"}
+      </button>
       {compounds.map((row, rowIndex) => (
         <div key={rowIndex} className="row">
           {row.map((substance, colIndex) => (
