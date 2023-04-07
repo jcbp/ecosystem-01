@@ -5,8 +5,7 @@ import { Organism } from "./organism";
 import { getRandomInt, generateRandomString } from "../utils/random";
 
 const randomReproduction = (): Reproduction => ({
-  // mode: Math.random() < 0.5 ? "asexual" : "sexual",
-  mode: "sexual",
+  mode: Math.random() < 0.5 ? "asexual" : "sexual",
   offspring: getRandomInt(1, 10),
   probability: Math.random(),
 });
@@ -52,8 +51,8 @@ const randomToxicCompounds = (
 };
 
 const getRandomReproductivePeriod = (): [number, number] => {
-  const reproductivePeriod = getRandomInt(0, 100); // Duración aleatoria del periodo reproductivo
-  const reproductiveStartAge = getRandomInt(0, 100 - reproductivePeriod); // Inicio del periodo reproductivo
+  const reproductivePeriod = getRandomInt(1, 90); // Duración aleatoria del periodo reproductivo
+  const reproductiveStartAge = getRandomInt(1, 100 - reproductivePeriod); // Inicio del periodo reproductivo
   const reproductiveEndAge = reproductiveStartAge + reproductivePeriod; // Fin del periodo reproductivo
   return [reproductiveStartAge, reproductiveEndAge];
 };
@@ -91,8 +90,8 @@ export const createOrganismType = (
   );
   // up, right, down, left
   const movementPattern = generateRandomString(16, "URDL");
-  const nutrientUrgeThreshold = getRandomInt(0, 100);
-  const reproductiveUrgeThreshold = getRandomInt(0, 100);
+  const nutrientUrgeThreshold = getRandomInt(1, 100);
+  const reproductiveUrgeThreshold = getRandomInt(1, 100);
   const reproductivePeriod = getRandomReproductivePeriod();
   const species = constituentCompounds.map((c) => c.name).join("#");
   const constituentColors = constituentCompounds.map((c) => c.color);

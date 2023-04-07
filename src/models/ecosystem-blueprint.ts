@@ -13,7 +13,7 @@ export class EcosystemBlueprint {
   constructor() {
     this.createInorganicCompoundTypes(config.inorganicCompounds);
     this.createOrganicCompoundTypes(config.organicCompounds);
-    this.createOrganismTypes(config.ecosystemOrganisms);
+    this.createOrganismTypes(config.numEcosystemSpecies);
   }
 
   public createCompoundType = (organic: boolean): Compound => {

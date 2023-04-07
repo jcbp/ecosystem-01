@@ -10,10 +10,21 @@ export class CompoundClass implements Compound {
     c: number;
   };
   public organic: boolean;
-  public remaining: number = 100;
 
-  public isExhausted(): boolean {
-    return this.remaining <= 0;
+  private energy: number = 100;
+
+  public isDepleted(): boolean {
+    return this.energy <= 0;
+  }
+
+  public gainEnergy(amount: number) {
+    this.energy += amount;
+  }
+
+  public consume(amount: number): number {
+    const consumed = Math.min(amount, this.energy);
+    this.energy -= consumed;
+    return consumed;
   }
 
   constructor(a: number, b: number, c: number, organic: boolean) {
@@ -27,7 +38,7 @@ export class CompoundClass implements Compound {
     this.organic = organic;
   }
 
-  static copy(compound: CompoundClass): CompoundClass {
+  static copy(compound: Compound): Compound {
     return new CompoundClass(
       compound.components.a,
       compound.components.b,

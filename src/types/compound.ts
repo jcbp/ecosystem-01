@@ -7,7 +7,8 @@ export interface Compound {
     b: number;
     c: number;
   };
-  remaining: number;
 
-  isExhausted(): boolean;
+  isDepleted(): boolean;
+  consume(amount: number): number;
+  gainEnergy(amount: number): void;
 }

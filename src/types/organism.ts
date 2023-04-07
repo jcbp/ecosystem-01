@@ -1,4 +1,6 @@
 import { Compound } from './compound'
+import { Ecosystem } from "../models/ecosystem";
+
 export interface NutrientRequirement {
   compound: Compound;
   quantity: number;
@@ -13,4 +15,28 @@ export interface Reproduction {
 export interface Mutation {
   rate: number; // Mutation rate
   magnitude: number; // Magnitude of mutations
+}
+
+export interface OrganismTraits {
+  constituentCompounds: Compound[];
+  metabolizableCompounds: NutrientRequirement[];
+  toxicCompounds: Compound[];
+  reproduction: Reproduction;
+  mutation: Mutation;
+  metabolicRate: number;
+  contextSensitivity: number;
+  movementPattern: string;
+  nutrientUrgeThreshold: number;
+  reproductiveUrgeThreshold: number;
+  reproductivePeriod: [number, number];
+}
+
+interface IOrganism {
+  species: string;
+  color: string;
+  energy: number;
+  age: number;
+  isAlive: boolean;
+  ecosystem: Ecosystem | undefined;
+  traits: OrganismTraits;
 }

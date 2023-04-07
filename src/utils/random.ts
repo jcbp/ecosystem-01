@@ -16,3 +16,8 @@ export const generateRandomString = (
   }
   return result;
 };
+
+export const randomChoice = <T>(choices: T[]): T => {
+  const index = Math.floor(Math.random() * choices.length);
+  return choices[index];
+};

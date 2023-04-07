@@ -223,7 +223,7 @@ export class Ecosystem {
   private updateCompounds(row: number, col: number): void {
     const compound = this.compounds[row][col];
     // compound.update();
-    if (compound.isExhausted()) {
+    if (compound.isDepleted()) {
       // this.removeCompound(row, col);
     }
   }
@@ -233,6 +233,7 @@ export class Ecosystem {
     organismsInCell.forEach((organism) => {
       if (!organism.isAlive) {
         this.removeOrganism(organism, row, col);
+        this.compounds[row][col].gainEnergy(20);
       } else {
         organism.update();
       }

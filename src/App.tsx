@@ -24,7 +24,7 @@ function Cell({
     <div
       className="cell"
       style={{
-        backgroundColor: substance.isExhausted() ? "#c0c0c0" : substance.color,
+        backgroundColor: substance.isDepleted() ? "#c0c0c0" : substance.color,
       }}
       onClick={handleClick}
     >
@@ -75,7 +75,7 @@ function App() {
         setCompounds([...ecosystem.getCompounds()]);
         setOrganisms([...ecosystem.getOrganisms()]);
       }
-    }, 100);
+    }, 50);
     return () => clearInterval(interval);
   }, [isPaused]);
 

@@ -1,5 +1,5 @@
 import { Compound } from "../types/compound";
-import { NutrientRequirement, Mutation, Reproduction } from "../types/organism";
+import { OrganismTraits } from "../types/organism";
 import { CompoundClass } from "./compound";
 import { Ecosystem } from "./ecosystem";
 import { sexualReproduce, asexualReproduce } from "./organism-reproduction";
@@ -9,24 +9,10 @@ interface Context {
   nearbyOrganisms: Organism[];
 }
 
-interface OrganismTraits {
-  constituentCompounds: Compound[];
-  metabolizableCompounds: NutrientRequirement[];
-  toxicCompounds: Compound[];
-  reproduction: Reproduction;
-  mutation: Mutation;
-  metabolicRate: number;
-  contextSensitivity: number;
-  movementPattern: string;
-  nutrientUrgeThreshold: number;
-  reproductiveUrgeThreshold: number;
-  reproductivePeriod: [number, number];
-}
-
 export class Organism {
   public species: string;
   public color: string;
-  public energy: number = 100;
+  public energy: number = 70;
   public age: number = 0;
   public isAlive: boolean = true;
   public ecosystem: Ecosystem | undefined;
@@ -48,9 +34,9 @@ export class Organism {
     this.ecosystem = ecosystem;
   }
 
-  private moveTo(x: number, y: number) {
-    this.ecosystem!.moveOrganism(this, x, y);
-    this.energy -= this.traits.metabolicRate * 4;
+  private moveTo(row: number, col: number) {
+    this.ecosystem!.moveOrganism(this, row, col);
+    this.loseEnergy(this.traits.metabolicRate * 2);
   }
 
   private findNutrientsAround(): [number, number] | null {
@@ -59,7 +45,7 @@ export class Organism {
       for (const compound of context.nearbyCompounds) {
         if (
           compound.name === nutrient.compound.name &&
-          !compound.isExhausted()
+          !compound.isDepleted()
         ) {
           const [row, col] = this.ecosystem!.findCompoundLocation(compound);
           return [row, col];
@@ -68,6 +54,7 @@ export class Organism {
       for (const organism of context.nearbyOrganisms) {
         if (
           organism !== this &&
+          organism.isAlive &&
           organism.traits.constituentCompounds.some(
             (compound) => compound.name === nutrient.compound.name
           )
@@ -87,7 +74,7 @@ export class Organism {
       this.traits.metabolizableCompounds.some(
         (r) =>
           r.compound.name === currentCompound.name &&
-          !currentCompound.isExhausted()
+          !currentCompound.isDepleted()
       )
     ) {
       return currentCompound;
@@ -98,6 +85,7 @@ export class Organism {
       this.ecosystem!.getOrganismsAtSamePosition(this);
     for (const organism of organismsAtSamePosition) {
       if (
+        organism.isAlive &&
         this.traits.metabolizableCompounds.some((r) =>
           organism.traits.constituentCompounds.includes(r.compound)
         )
@@ -136,35 +124,55 @@ export class Organism {
     const [ecosystemRows, ecosystemCols] = this.ecosystem!.getSize();
     newX = (newX + ecosystemCols) % ecosystemCols;
     newY = (newY + ecosystemRows) % ecosystemRows;
-    this.moveTo(newX, newY);
+    this.moveTo(newY, newX);
     this.movementPatternIndex++;
   }
 
-  private consumeNutrient(nutrientSource: Organism | CompoundClass) {
+  private feedOn(nutrientSource: Organism | CompoundClass, amount: number) {
+    if (nutrientSource instanceof Organism) {
+      nutrientSource.loseEnergy(amount);
+      this.gainEnergy(amount);
+      this.status = "energy incresed";
+    } else if (nutrientSource instanceof CompoundClass) {
+      const consumed = nutrientSource.consume(amount / 2);
+      this.gainEnergy(consumed);
+      this.status = "energy incresed";
+    }
+  }
+
+  public loseEnergy(amount: number) {
+    if (this.energy <= 0) {
+      this.isAlive = false;
+    }
+    this.energy -= amount;
+  }
+
+  private gainEnergy(amount: number) {
+    this.energy += amount;
+  }
+
+  private consumeNutrient(nutrientSource: Organism | Compound) {
     if (nutrientSource instanceof Organism) {
       for (const requirement of this.traits.metabolizableCompounds) {
         const compound = requirement.compound;
         const quantity = requirement.quantity;
         if (
+          nutrientSource.isAlive &&
           nutrientSource.traits.constituentCompounds.find(
             (c) => c.name === compound.name
           )
         ) {
-          this.energy += quantity;
-          this.status = "energy incresed";
+          this.feedOn(nutrientSource, quantity);
         }
       }
-      nutrientSource.energy -= 30;
     } else if (nutrientSource instanceof CompoundClass) {
-      if (!nutrientSource.isExhausted()) {
+      if (!nutrientSource.isDepleted()) {
         const requirement = this.traits.metabolizableCompounds.find(
           (r) => r.compound.name === nutrientSource.name
         );
         if (requirement) {
-          this.energy += requirement.quantity;
-          this.status = "energy incresed";
+          this.feedOn(nutrientSource, requirement.quantity);
         }
-        nutrientSource.remaining -= 10;
       }
     }
   }
@@ -192,8 +200,12 @@ export class Organism {
       return;
     }
 
-    this.energy -= this.traits.metabolicRate;
-    this.age += 0.1;
+    this.loseEnergy(this.traits.metabolicRate * 2);
+    if (this.traits.reproduction.mode === "asexual") {
+      this.age += 0.01;
+    } else {
+      this.age += 0.05;
+    }
 
     const nutrientUrge = Math.min(100 - this.energy, 100);
     const nutrientUrgency = nutrientUrge / this.traits.nutrientUrgeThreshold;
@@ -232,8 +244,7 @@ export class Organism {
         }
       }
     } else if (
-      (nutrientUrgency < reproductiveUrgency ||
-        this.energy >= this.traits.nutrientUrgeThreshold) &&
+      this.energy >= this.traits.nutrientUrgeThreshold &&
       this.reproductiveUrge >= this.traits.reproductiveUrgeThreshold
     ) {
       // Priorizar reproducción
@@ -241,12 +252,12 @@ export class Organism {
       if (this.traits.reproduction.mode === "asexual") {
         asexualReproduce(this);
         this.reproductiveUrge = 0;
-        this.energy -= 10;
       } else {
         const partner = this.findPartner();
         if (partner) {
           this.status = "found partner for reproduction";
           sexualReproduce(this, partner);
+          this.reproductiveUrge = 0;
         } else {
           this.status = "moving to find a partner";
           this.moveByPattern();
